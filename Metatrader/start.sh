@@ -130,7 +130,14 @@ sleep 5
 
 # Check if the server is running
 if ss -tuln | grep ":$mt5server_port" > /dev/null; then
-    show_message "[7/7] The mt5linux server is running on port $mt5server_port."
+    show_message "------------------------------------------------------------------"
+    show_message "  [7/7] SUCCESS: The mt5linux server is running on port $mt5server_port."
+    show_message "------------------------------------------------------------------"
+    show_message "  VNC Web Interface: http://localhost:3000"
+    show_message "  RPyC API Bridge:   localhost:$mt5server_port"
+    show_message "------------------------------------------------------------------"
 else
-    show_message "[7/7] Failed to start the mt5linux server on port $mt5server_port."
+    show_message "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+    show_message "  [7/7] ERROR: Failed to start mt5linux server on port $mt5server_port."
+    show_message "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
 fi

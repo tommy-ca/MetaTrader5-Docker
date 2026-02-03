@@ -151,6 +151,33 @@ You can access MetaEditor program clicking in `IDE` button in MetaTrader5 interf
 
 **Metatrader will always be updated automatically to latest version as it does when it is nativelly installed in Windows.**
 
+## Validation
+
+The image includes a healthcheck and a validation script to ensure the MT5 bridge is running correctly.
+
+### 1. Automated Validation (Sidecar)
+
+The `docker-compose.yaml` includes a `tester` service that automatically waits for MT5 to be healthy and runs a connectivity check.
+
+```bash
+# Start MT5 and run the tester automatically
+docker compose up
+```
+
+Watch the logs for the `mt5-tester` container. If you see "Connection Successful", the environment is ready for your own scripts.
+
+### 2. Manual Validation (Host)
+
+If you prefer to validate from your host machine, use the provided script:
+
+```bash
+# Install dependencies on your host
+pip install mt5linux rpyc
+
+# Run the validation script
+python scripts/validate_connectivity.py
+```
+
 ## Python programming
 
 You need to install [mt5linux library](https://github.com/lucas-campagna/mt5linux) in your Python host. It may be in any OS, not only Linux.
