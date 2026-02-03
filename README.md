@@ -9,6 +9,11 @@ This project provides a Docker image for running MetaTrader5 with remote access 
 - Built on the reliable and secure [KasmVNC](https://github.com/kasmtech/KasmVNC) project.
 - RPyC server for remote access to Python MetaTrader Library from Windows or Linux using <https://github.com/lucas-campagna/mt5linux>
 
+## Documentation
+
+- [Design Document](docs/DESIGN.md) - Architectural overview and internal components.
+- [Deployment & Security](docs/DEPLOYMENT.md) - Security best practices, configuration, and troubleshooting.
+
 ![MetaTrader5 running inside container and controlled through web browser](https://imgur.com/v6Hm9pa.png)
 
 ----------
@@ -153,36 +158,16 @@ You can access MetaEditor program clicking in `IDE` button in MetaTrader5 interf
 
 ## Validation
 
-The image includes a healthcheck and a validation script to ensure the MT5 bridge is running correctly.
-
-### 1. Manual Validation (Host)
-
-If you prefer to validate from your host machine, use the provided script:
+The image includes a healthcheck and a validation script to ensure the MT5 bridge is running correctly. See [Deployment Guide](docs/DEPLOYMENT.md#validation) for details.
 
 ```bash
-# Install dependencies on your host
-pip install mt5linux rpyc
-
-# Run the validation script
-python scripts/validate_connectivity.py
-
-# Run with machine-readable output for agents
-python scripts/validate_connectivity.py --json
-```
-
-### 2. Validation via Docker Exec
-
-You can also run the validation script directly inside the container:
-
-```bash
-docker exec mt5 python3 /scripts/validate_connectivity.py
+# Quick validation via Docker Exec
+docker exec mt5 python3 /scripts/validate_connectivity.py --json
 ```
 
 ## Python programming
 
-You need to install [mt5linux library](https://github.com/lucas-campagna/mt5linux) in your Python host. It may be in any OS, not only Linux.
-
-This is a simple snippet to run your Python script fron any host
+You need to install [mt5linux library](https://github.com/lucas-campagna/mt5linux) in your Python host.
 
 ```python
 from mt5linux import MetaTrader5
@@ -191,66 +176,15 @@ mt5.initialize()
 print(mt5.version())
 ```
 
-Output should be something like this:
-
-```python
-(mt5linux) linux:~/$ python3
-Python 3.10.13 (main, Dec 26 2023, 20:21:41) [GCC 13.2.0] on linux
-Type "help", "copyright", "credits" or "license" for more information.
->>> from mt5linux import MetaTrader5
->>> mt5 = MetaTrader5(host='192.168.1.10',port=8001)
->>> mt5.initialize()
-True
->>> print(mt5.version())
-(500, 4120, '22 Dec 2023')
->>>
-```
+See [Deployment Guide](docs/DEPLOYMENT.md) for advanced configuration and security best practices.
 
 ## Configuration
 
-The port configuration can be adjusted as per the instructions in the KasmVNC repository.
+The image can be configured using environment variables. See [Deployment Guide](docs/DEPLOYMENT.md#configuration) for the full list of options and examples.
 
-### MetaTrader 5 Command Line Options
-
-You can pass command line options to MetaTrader 5 using the `MT5_CMD_OPTIONS` environment variable. This is useful for custom configurations, tester modes, or other MetaTrader command line parameters.
-
-Example using docker-compose:
-
-```yaml
-version: '3'
-services:
-  mt5:
-    image: gmag11/metatrader5_vnc
-    container_name: mt5
-    volumes:
-      - mt5_config:/config
-    ports:
-      - 3000:3000
-      - 8001:8001
-    environment:
-      - CUSTOM_USER=<Choose a user>
-      - PASSWORD=<Choose a secure password>
-      - MT5_CMD_OPTIONS=/config:C:\\customized_for_tester_etc.ini
-
-volumes:
-  mt5_config:
-```
-
-Example using docker run:
-
-```bash
-docker run -d -p 3000:3000 -p 8001:8001 \
-  -e MT5_CMD_OPTIONS="/config:C:\\customized_for_tester_etc.ini" \
-  -v mt5_config:/config \
-  gmag11/metatrader5_vnc
-```
-
-Common MetaTrader 5 command line options:
-
-- `/config:<path>` - Use a specific configuration file
-- `/login:<account>` - Automatically login to specified account
-
-For a complete list of available options, refer to the [MetaTrader 5 documentation](https://www.metatrader5.com/en/terminal/help/start_advanced/start).
+- `MT5_API_BIND`: IP address for the RPyC bridge (default: `0.0.0.0`).
+- `MT5_CMD_OPTIONS`: Additional command line arguments for MetaTrader 5.
+- `CUSTOM_USER` / `PASSWORD`: Credentials for the web interface.
 
 ## Contributions
 

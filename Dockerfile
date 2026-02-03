@@ -32,7 +32,7 @@ COPY --chmod=755 Metatrader /Metatrader
 COPY root/defaults /defaults
 COPY --chmod=755 scripts /scripts
 
-HEALTHCHECK --interval=30s --timeout=30s --start-period=60s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=30s --start-period=300s --retries=3 \
   CMD python3 /scripts/validate_connectivity.py --json || exit 1
 
 EXPOSE 3000 8001
