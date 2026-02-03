@@ -10,12 +10,28 @@ mt5server_port="8001"
 MT5_API_BIND="${MT5_API_BIND:-127.0.0.1}"
 MT5_CMD_OPTIONS="${MT5_CMD_OPTIONS:-}"
 mono_url="https://dl.winehq.org/wine/wine-mono/10.3.0/wine-mono-10.3.0-x86.msi"
+mono_sha256="cece5c63180094dffdf01d0fbe362a4b606e5280b98cdfd1b8568cdf9b572f98"
 python_url="https://www.python.org/ftp/python/3.9.13/python-3.9.13.exe"
+python_sha256="f363935897bf32adf6822ba15ed1bfed7ae2ae96477f0262650055b6e9637c35"
 mt5setup_url="https://download.mql5.com/cdn/web/metaquotes.software.corp/mt5/mt5setup.exe"
+mt5setup_sha256="d437fd760587d24e094864215b86a441cc64ab897cace2b2a21a46614b3f4e36"
 
 # Function to display a graphical message
 show_message() {
     echo $1
+}
+
+# Function to verify SHA256 integrity
+verify_integrity() {
+    local file=$1
+    local expected_hash=$2
+    show_message "Verifying integrity of $(basename $file)..."
+    if echo "$expected_hash $file" | sha256sum -c - > /dev/null 2>&1; then
+        show_message "Integrity check passed."
+    else
+        show_message "ERROR: Integrity check failed for $file!"
+        exit 1
+    fi
 }
 
 # Function to check if a dependency is installed
@@ -40,12 +56,14 @@ is_wine_python_package_installed() {
 
 # Check for necessary dependencies
 check_dependency "curl"
+check_dependency "sha256sum"
 check_dependency "$wine_executable"
 
 # Install Mono if not present
 if [ ! -e "/config/.wine/drive_c/windows/mono" ]; then
     show_message "[1/7] Downloading and installing Mono..."
     curl -o /config/.wine/drive_c/mono.msi $mono_url
+    verify_integrity "/config/.wine/drive_c/mono.msi" "$mono_sha256"
     WINEDLLOVERRIDES=mscoree=d $wine_executable msiexec /i /config/.wine/drive_c/mono.msi /qn
     rm /config/.wine/drive_c/mono.msi
     show_message "[1/7] Mono installed."
@@ -63,6 +81,7 @@ else
     $wine_executable reg add "HKEY_CURRENT_USER\\Software\\Wine" /v Version /t REG_SZ /d "win10" /f
     show_message "[3/7] Downloading MT5 installer..."
     curl -o /config/.wine/drive_c/mt5setup.exe $mt5setup_url
+    verify_integrity "/config/.wine/drive_c/mt5setup.exe" "$mt5setup_sha256"
     show_message "[3/7] Installing MetaTrader 5..."
     $wine_executable "/config/.wine/drive_c/mt5setup.exe" "/auto" &
     wait
@@ -82,6 +101,7 @@ fi
 if ! $wine_executable python --version 2>/dev/null; then
     show_message "[5/7] Installing Python in Wine..."
     curl -L $python_url -o /tmp/python-installer.exe
+    verify_integrity "/tmp/python-installer.exe" "$python_sha256"
     $wine_executable /tmp/python-installer.exe /quiet InstallAllUsers=1 PrependPath=1
     rm /tmp/python-installer.exe
     show_message "[5/7] Python installed in Wine."
@@ -99,27 +119,14 @@ if ! is_wine_python_package_installed "MetaTrader5==$metatrader_version"; then
 fi
 # Install mt5linux library in Windows if not installed
 show_message "[6/7] Checking and installing mt5linux library in Windows if necessary"
-if ! is_wine_python_package_installed "mt5linux"; then
-    $wine_executable python -m pip install --no-cache-dir "mt5linux>=0.1.9"
+if ! is_wine_python_package_installed "mt5linux==0.1.9"; then
+    $wine_executable python -m pip install --no-cache-dir mt5linux==0.1.9
 fi
 
 # Install python-dateutil if needed (datetime is built-in, but dateutil adds features)
-if ! is_wine_python_package_installed "python-dateutil"; then
+if ! is_wine_python_package_installed "python-dateutil==2.9.0.post0"; then
     show_message "[6/7] Installing python-dateutil library in Windows"
-    $wine_executable python -m pip install --no-cache-dir python-dateutil
-fi
-
-# Install mt5linux library in Linux if not installed
-show_message "[6/7] Checking and installing mt5linux library in Linux if necessary"
-if ! is_python_package_installed "mt5linux"; then
-    pip install --break-system-packages --no-cache-dir --no-deps mt5linux && \
-    pip install --break-system-packages --no-cache-dir rpyc plumbum numpy
-fi
-
-# Install pyxdg library in Linux if not installed
-show_message "[6/7] Checking and installing pyxdg library in Linux if necessary"
-if ! is_python_package_installed "pyxdg"; then
-    pip install --break-system-packages --no-cache-dir pyxdg
+    $wine_executable python -m pip install --no-cache-dir python-dateutil==2.9.0.post0
 fi
 
 # Start the MT5 server on Linux
