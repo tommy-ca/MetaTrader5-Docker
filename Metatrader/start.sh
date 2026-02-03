@@ -135,13 +135,13 @@ python3 -m mt5linux --host $MT5_API_BIND -p $mt5server_port -w $wine_executable 
 
 # Wait for the server to start (max 10 seconds, polling every 0.5s)
 RETRIES=0
-while ! ss -tuln | grep -q ":$mt5server_port" && [ $RETRIES -lt 20 ]; do
+while ! ss -lnt "sport = :$mt5server_port" | grep -q "$mt5server_port" && [ $RETRIES -lt 20 ]; do
     sleep 0.5
     RETRIES=$((RETRIES + 1))
 done
 
 # Check if the server is running
-if ss -tuln | grep ":$mt5server_port" > /dev/null; then
+if ss -lnt "sport = :$mt5server_port" | grep -q "$mt5server_port"; then
     show_message "------------------------------------------------------------------"
     show_message "  [7/7] SUCCESS: The mt5linux server is running on port $mt5server_port."
     show_message "  BIND_ADDRESS: $MT5_API_BIND"

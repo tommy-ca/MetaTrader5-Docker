@@ -4,7 +4,7 @@ import logging
 import os
 import sys
 import time
-from typing import Any, Dict, Optional, TypedDict, Union, NotRequired
+from typing import Any, Dict, Optional, TypedDict
 
 # Configure logging
 # We use stderr for logs so that stdout can be reserved for clean JSON output if requested.
@@ -41,10 +41,10 @@ class ValidationResult(TypedDict):
     timestamp: float
     host: str
     port: int
-    version: NotRequired[Optional[tuple]]
-    terminal_info: NotRequired[Optional[Union[Dict[str, Any], str]]]
-    message: NotRequired[str]
-    warning: NotRequired[str]
+    version: Optional[tuple]
+    terminal_info: Optional[Dict[str, Any]]
+    message: Optional[str]
+    warning: Optional[str]
 
 
 def get_mt5_connection(
@@ -113,18 +113,18 @@ def run_validation(host: str, port: int, output_json: bool = False) -> Validatio
         "timestamp": time.time(),
         "host": host,
         "port": port,
+        "version": None,
+        "terminal_info": None,
+        "message": None,
+        "warning": None,
     }
     mt5: Optional[MetaTrader5] = None
 
     try:
         mt5 = get_mt5_connection(host, port)
 
-        result.update(
-            {
-                "status": "success",
-                "version": mt5.version(),
-            }
-        )
+        result["status"] = "success"
+        result["version"] = mt5.version()
 
         terminal_info = mt5.terminal_info()
         if terminal_info:
@@ -133,9 +133,10 @@ def run_validation(host: str, port: int, output_json: bool = False) -> Validatio
                 if hasattr(terminal_info, "_asdict"):
                     result["terminal_info"] = terminal_info._asdict()
                 else:
-                    result["terminal_info"] = str(terminal_info)
+                    # Return None for invalid data as per strict typing requirements
+                    result["terminal_info"] = None
             except (AttributeError, TypeError):
-                result["terminal_info"] = str(terminal_info)
+                result["terminal_info"] = None
         else:
             logger.warning(
                 "Connected but terminal_info() returned None. Is MT5 fully started?"
@@ -145,7 +146,7 @@ def run_validation(host: str, port: int, output_json: bool = False) -> Validatio
         if not output_json:
             logger.info("--- VALIDATION SUCCESSFUL ---")
             logger.info(f"MT5 Version: {result.get('version')}")
-            if "terminal_info" in result:
+            if result["terminal_info"] is not None:
                 logger.info(f"Terminal Info: {result['terminal_info']}")
 
     except (ImportError, ConnectionError, Exception) as e:
