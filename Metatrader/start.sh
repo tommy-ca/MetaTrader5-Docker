@@ -7,6 +7,7 @@ WINEDEBUG='-all'
 wine_executable="wine"
 metatrader_version="5.0.36"
 mt5server_port="8001"
+MT5_API_BIND="${MT5_API_BIND:-127.0.0.1}"
 MT5_CMD_OPTIONS="${MT5_CMD_OPTIONS:-}"
 mono_url="https://dl.winehq.org/wine/wine-mono/10.3.0/wine-mono-10.3.0-x86.msi"
 python_url="https://www.python.org/ftp/python/3.9.13/python-3.9.13.exe"
@@ -122,19 +123,29 @@ if ! is_python_package_installed "pyxdg"; then
 fi
 
 # Start the MT5 server on Linux
-show_message "[7/7] Starting the mt5linux server..."
-python3 -m mt5linux --host 0.0.0.0 -p $mt5server_port -w $wine_executable python.exe &
+show_message "[7/7] Starting the mt5linux server on $MT5_API_BIND..."
+python3 -m mt5linux --host $MT5_API_BIND -p $mt5server_port -w $wine_executable python.exe &
 
-# Give the server some time to start
-sleep 5
+# Wait for the server to start (max 10 seconds, polling every 0.5s)
+RETRIES=0
+while ! ss -tuln | grep -q ":$mt5server_port" && [ $RETRIES -lt 20 ]; do
+    sleep 0.5
+    RETRIES=$((RETRIES + 1))
+done
 
 # Check if the server is running
 if ss -tuln | grep ":$mt5server_port" > /dev/null; then
     show_message "------------------------------------------------------------------"
     show_message "  [7/7] SUCCESS: The mt5linux server is running on port $mt5server_port."
+    show_message "  BIND_ADDRESS: $MT5_API_BIND"
+    if [ "$MT5_API_BIND" == "0.0.0.0" ]; then
+        show_message "  SECURITY_WARNING: Bound to 0.0.0.0. RPyC is UNENCRYPTED and UNAUTHENTICATED."
+        show_message "  Ensure this port is not exposed to untrusted networks."
+    fi
+    show_message "  AGENT_STATUS: READY"
     show_message "------------------------------------------------------------------"
     show_message "  VNC Web Interface: http://localhost:3000"
-    show_message "  RPyC API Bridge:   localhost:$mt5server_port"
+    show_message "  RPyC API Bridge:   $MT5_API_BIND:$mt5server_port"
     show_message "------------------------------------------------------------------"
 else
     show_message "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"

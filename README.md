@@ -155,18 +155,7 @@ You can access MetaEditor program clicking in `IDE` button in MetaTrader5 interf
 
 The image includes a healthcheck and a validation script to ensure the MT5 bridge is running correctly.
 
-### 1. Automated Validation (Sidecar)
-
-The `docker-compose.yaml` includes a `tester` service that automatically waits for MT5 to be healthy and runs a connectivity check.
-
-```bash
-# Start MT5 and run the tester automatically
-docker compose up
-```
-
-Watch the logs for the `mt5-tester` container. If you see "Connection Successful", the environment is ready for your own scripts.
-
-### 2. Manual Validation (Host)
+### 1. Manual Validation (Host)
 
 If you prefer to validate from your host machine, use the provided script:
 
@@ -176,6 +165,17 @@ pip install mt5linux rpyc
 
 # Run the validation script
 python scripts/validate_connectivity.py
+
+# Run with machine-readable output for agents
+python scripts/validate_connectivity.py --json
+```
+
+### 2. Validation via Docker Exec
+
+You can also run the validation script directly inside the container:
+
+```bash
+docker exec mt5 python3 /scripts/validate_connectivity.py
 ```
 
 ## Python programming
