@@ -28,10 +28,9 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 
-COPY /Metatrader /Metatrader
-RUN chmod +x /Metatrader/start.sh
-COPY /root /
-COPY /scripts /scripts
+COPY --chmod=755 Metatrader /Metatrader
+COPY root/defaults /defaults
+COPY --chmod=755 scripts /scripts
 
 HEALTHCHECK --interval=30s --timeout=30s --start-period=60s --retries=3 \
   CMD python3 /scripts/validate_connectivity.py --json || exit 1
