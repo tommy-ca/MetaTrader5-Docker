@@ -38,7 +38,7 @@ def main():
         port=port,
         hostname=host,
         authenticator=authenticator,
-        protocol_config={"allow_public_attrs": True, "sync_request_timeout": 30},
+        protocol_config={"allow_public_attrs": False, "sync_request_timeout": 30},
     )
 
     # Start Metrics

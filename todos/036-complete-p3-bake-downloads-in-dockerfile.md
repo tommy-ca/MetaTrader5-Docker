@@ -1,5 +1,5 @@
 ---
-status: pending
+status: complete
 priority: p3
 issue_id: "036"
 tags: [architecture, reliability]
@@ -21,8 +21,9 @@ dependencies: []
 Move downloads to Docker build phase.
 
 # Acceptance Criteria
-- [ ] Container starts without internet access (after pull).
-- [ ] Faster startup time.
+- [x] Container starts without internet access (after pull).
+- [x] Faster startup time.
 
 # Work Log
 - 2026-02-04: Identified by Architecture Strategist.
+- 2026-02-04: Baked downloads into Dockerfile and updated start.sh to use local files.

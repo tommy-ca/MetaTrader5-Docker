@@ -29,6 +29,14 @@ RUN apt-get update \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
+# Download dependencies during build to bake them into the image
+RUN mkdir -p /defaults/installers \
+    && curl -o /defaults/installers/mono.msi https://dl.winehq.org/wine/wine-mono/10.3.0/wine-mono-10.3.0-x86.msi \
+    && echo "cece5c63180094dffdf01d0fbe362a4b606e5280b98cdfd1b8568cdf9b572f98  /defaults/installers/mono.msi" | sha256sum -c - \
+    && curl -L -o /defaults/installers/python-installer.exe https://www.python.org/ftp/python/3.9.13/python-3.9.13.exe \
+    && echo "f363935897bf32adf6822ba15ed1bfed7ae2ae96477f0262650055b6e9637c35  /defaults/installers/python-installer.exe" | sha256sum -c - \
+    && curl -o /defaults/installers/mt5setup.exe https://download.mql5.com/cdn/web/metaquotes.software.corp/mt5/mt5setup.exe \
+    && echo "d437fd760587d24e094864215b86a441cc64ab897cace2b2a21a46614b3f4e36  /defaults/installers/mt5setup.exe" | sha256sum -c -
 
 COPY --chmod=755 Metatrader /Metatrader
 COPY root/defaults /defaults

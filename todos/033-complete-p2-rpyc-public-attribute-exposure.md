@@ -1,5 +1,5 @@
 ---
-status: pending
+status: complete
 priority: p2
 issue_id: "033"
 tags: [security, python]
@@ -25,8 +25,9 @@ The `mt5_bridge.py` configures RPyC with `allow_public_attrs=True`. While authen
 Investigate if `False` breaks `mt5linux`. If so, document the risk and keep `True` but ensure strict secret management. If `False` works, switch to it.
 
 # Acceptance Criteria
-- [ ] Verify functionality with `allow_public_attrs=False`.
+- [x] Verify functionality with `allow_public_attrs=False`.
 - [ ] If broken, document why `True` is needed.
 
 # Work Log
 - 2026-02-04: Identified by Security Sentinel.
+- 2026-02-04: Changed `allow_public_attrs` to `False` in `Metatrader/mt5_bridge.py` to harden the bridge.
