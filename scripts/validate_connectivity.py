@@ -39,9 +39,12 @@ def validate(host: str, port: int, output_json: bool) -> bool:
             info = mt5.terminal_info()
             if info:
                 state["trade_allowed"] = getattr(info, "trade_allowed", False)
-                state["terminal_info"] = (
-                    info._asdict() if hasattr(info, "_asdict") else str(info)
-                )
+                if hasattr(info, "_asdict"):
+                    info_dict = info._asdict()
+                    info_dict.pop("login", None)  # Sanitize: remove account number
+                    state["terminal_info"] = info_dict
+                else:
+                    state["terminal_info"] = str(info)
         else:
             state["message"] = f"MT5 init failed: {mt5.last_error()}"
     except Exception as e:
