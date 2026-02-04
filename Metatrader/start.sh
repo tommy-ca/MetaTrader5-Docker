@@ -53,6 +53,14 @@ check_dependency "curl"
 check_dependency "sha256sum"
 check_dependency "$WINE_EXECUTABLE"
 
+# Security Validation (P1/P2 Findings)
+if [ -z "$RPYC_SECRET" ]; then
+    show_message "CRITICAL ERROR: RPYC_SECRET is not set."
+    show_message "The bridge requires a shared secret for security."
+    show_message "Please set RPYC_SECRET in your environment or .env file."
+    exit 1
+fi
+
 # Install Mono if not present
 if [ ! -e "/config/.wine/drive_c/windows/mono" ]; then
     show_message "[1/8] Downloading and installing Mono..."
@@ -102,6 +110,13 @@ EOF
     chmod 600 /tmp/mt5_config/config.ini
     export MT5_CONFIG_PATH='Z:\tmp\mt5_config\config.ini'
     show_message "[4/8] Generated config.ini for auto-login."
+    
+    # Security: Delete the password file after MT5 initialization (P1 Finding)
+    (
+        sleep 60
+        rm -f /tmp/mt5_config/config.ini
+        echo "SECURE: Deleted /tmp/mt5_config/config.ini from filesystem."
+    ) &
 else
     show_message "[4/8] No credentials provided. Manual login required via VNC."
     export MT5_CONFIG_PATH=''
@@ -143,16 +158,21 @@ trap 'show_message "Caught SIGTERM, shutting down Wine..."; wineserver -k; wines
 
 # Start Process Management via supervisord
 show_message "[8/8] Launching process supervisor (supervisord)..."
-/usr/bin/supervisord -c /Metatrader/supervisord.conf &
 
-# Success Message & Keep-alive
+# Ensure permissions for non-root execution (P1 Finding)
+# If running as root, chown the directories so the 'abc' user (used in supervisord) can access them
+if [ "$(id -u)" = "0" ]; then
+    show_message "Fixing permissions for user 'abc'..."
+    chown -R abc:abc /config /tmp/mt5_config 2>/dev/null || true
+fi
+
+# Success Message (Pre-Exec)
 show_message "------------------------------------------------------------------"
-show_message "  SUCCESS: Hardened & Automated MT5 Platform is running."
+show_message "  SUCCESS: Hardened & Automated MT5 Platform initializing..."
 show_message "  RPyC API Bridge:   $MT5_HOST:$MT5_PORT"
 show_message "  Prometheus Metrics: http://localhost:9100/metrics"
 show_message "  VNC Web Interface:  http://localhost:3000"
-show_message "  AGENT_STATUS: READY"
+show_message "  LOGGING:            Streaming to stdout/stderr"
 show_message "------------------------------------------------------------------"
 
-# Wait for background processes
-wait
+exec /usr/bin/supervisord -c /Metatrader/supervisord.conf
