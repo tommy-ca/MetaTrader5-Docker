@@ -3,16 +3,17 @@ services:
     build: .
     image: gmag11/metatrader5_vnc
     container_name: mt5
+    init: true
+    shm_size: 2gb
     volumes:
       - ./config:/config
     ports:
-      - 3000:3000
-      - 8001:8001
+      - 127.0.0.1:3000:3000
+      - 127.0.0.1:8001:8001
     env_file:
       - .env
     environment:
-      # RPyC binding address. 
-      # Set to 127.0.0.1 for security (only reachable via SSH tunnel or from inside the container).
-      # Set to 0.0.0.0 to allow direct access from the host via mapped port 8001.
-      # Note: RPyC is unencrypted/unauthenticated. Use 0.0.0.0 ONLY in trusted networks.
-      - MT5_API_BIND=127.0.0.1
+      # RPyC binding address inside the container. 
+      # Set to 0.0.0.0 to allow access from the host via mapped ports.
+      # The 'ports' section above restricts access to the host loopback (127.0.0.1).
+      - MT5_API_BIND=0.0.0.0
