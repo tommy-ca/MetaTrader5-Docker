@@ -158,12 +158,18 @@ You can access MetaEditor program clicking in `IDE` button in MetaTrader5 interf
 
 ## Validation
 
-The image includes a healthcheck and a validation script to ensure the MT5 bridge is running correctly. See [Deployment Guide](docs/DEPLOYMENT.md#validation) for details.
+The image includes a robust validation tool that supports health checks and detailed diagnostics. See [Deployment Guide](docs/DEPLOYMENT.md#validation) for details.
 
 ```bash
 # Quick validation via Docker Exec
 docker exec mt5 python3 /scripts/validate_connectivity.py --json
 ```
+
+## Examples & Demos
+
+For a step-by-step validation of your setup from your host machine, check the [Example Suite](examples/README.md).
+
+- **Unified Connectivity Tool**: A robust script in `scripts/` (with a wrapper in `examples/`) to verify the bridge, terminal, and broker connection with optional market data checks.
 
 ## Python programming
 

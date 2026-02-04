@@ -96,6 +96,7 @@ mt5 = MetaTrader5(host=args.host, port=args.port, config=config)
 - [x] `examples/demo.py` successfully connects and fetches a tick from a running container.
 - [x] `examples/README.md` contains security warnings and agent-native reference.
 - [x] **Privacy**: `validate_connectivity.py` sanitizes `terminal_info` to remove the `login` field.
+- [x] **Unification**: `demo.py` is now a wrapper for the unified `validate_connectivity.py`.
 
 ---
 
