@@ -33,7 +33,8 @@ def main():
 
     if host == "0.0.0.0":
         logger.warning(
-            "SECURITY WARNING: Bridge is bound to 0.0.0.0. Ensure RPYC_SECRET is strong."
+            "SECURITY WARNING: Bridge is bound to 0.0.0.0. Traffic is unencrypted and vulnerable to sniffing. "
+            "Use SSH tunnels or a private network for secure remote access."
         )
 
     # Initialize Authenticated Server

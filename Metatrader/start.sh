@@ -6,9 +6,9 @@ WINEPREFIX='/config/.wine'
 WINEDEBUG='-all'
 WINE_EXECUTABLE="wine"
 METATRADER_VERSION="5.0.36"
-MT5_PORT="${MT5_PORT:-8001}"
-MT5_HOST="${MT5_HOST:-0.0.0.0}"
-MT5_CMD_OPTIONS="${MT5_CMD_OPTIONS:-}"
+export MT5_PORT="${MT5_PORT:-8001}"
+export MT5_HOST="${MT5_HOST:-0.0.0.0}"
+export MT5_CMD_OPTIONS="${MT5_CMD_OPTIONS:-}"
 MONO_URL="https://dl.winehq.org/wine/wine-mono/10.3.0/wine-mono-10.3.0-x86.msi"
 MONO_SHA256="cece5c63180094dffdf01d0fbe362a4b606e5280b98cdfd1b8568cdf9b572f98"
 PYTHON_URL="https://www.python.org/ftp/python/3.9.13/python-3.9.13.exe"
@@ -131,7 +131,7 @@ fi
 # Install required Python packages in Wine
 show_message "[7/8] Ensuring Python libraries are installed in Wine..."
 $WINE_EXECUTABLE python -m pip install --upgrade --no-cache-dir pip
-packages=("MetaTrader5==$METATRADER_VERSION" "mt5linux==0.1.9" "python-dateutil==2.9.0.post0")
+packages=("MetaTrader5==$METATRADER_VERSION" "mt5linux==0.1.9" "python-dateutil==2.9.0.post0" "prometheus_client" "requests")
 for pkg in "${packages[@]}"; do
     if ! is_wine_python_package_installed "$pkg"; then
         $WINE_EXECUTABLE python -m pip install --no-cache-dir "$pkg"

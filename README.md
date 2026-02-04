@@ -201,12 +201,13 @@ The image can be configured using environment variables:
 
 ## Security
 
-The RPyC protocol is unauthenticated and unencrypted by default. Anyone with network access to port `8001` can execute arbitrary Python code within the container.
+The RPyC bridge uses a shared secret for authentication (`RPYC_SECRET`), but the connection is **unencrypted** by default.
+Anyone capable of sniffing network traffic on port `8001` can capture the secret and execute arbitrary Python code within the container.
 
 **Best Practices:**
-1. **Restrict Binding**: For production, bind `MT5_HOST` to `127.0.0.1` and use SSH tunneling or a private Docker network.
-2. **Firewalling**: Ensure port `8001` is not exposed to the public internet.
-3. **Access Control**: Use a private network between your trading bot and the MT5 container.
+1. **Restrict Binding**: For production, bind `MT5_HOST` to `127.0.0.1` and use SSH tunneling.
+2. **Private Network**: If you must access it remotely without SSH, ensure the container runs in a trusted private network (VPN/VPC).
+3. **Firewalling**: Ensure port `8001` is NEVER exposed to the public internet.
 
 ## Troubleshooting
 

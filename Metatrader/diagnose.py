@@ -61,7 +61,7 @@ def diagnose():
         "processes": {
             "terminal64.exe": check_process("terminal64.exe"),
             "wineserver": check_process("wineserver"),
-            "bridge_server": check_process("bridge_server.py"),
+            "bridge_server": check_process("mt5_bridge.py"),
             "watchdog": check_process("watchdog.py"),
             "supervisord": check_process("supervisord"),
         },
