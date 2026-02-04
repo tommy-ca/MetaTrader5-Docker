@@ -8,14 +8,9 @@ import sys
 import os
 
 # Add the project root to the path so we can import from scripts
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-try:
-    from scripts.validate_connectivity import main
-except ImportError:
-    # Fallback for different execution contexts
-    sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-    from validate_connectivity import main
+from scripts.validate_connectivity import main
 
 if __name__ == "__main__":
     # If no arguments are passed, default to a EURUSD market data check

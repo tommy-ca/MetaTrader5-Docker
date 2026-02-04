@@ -16,4 +16,5 @@ services:
       # RPyC binding address inside the container. 
       # Set to 0.0.0.0 to allow access from the host via mapped ports.
       # The 'ports' section above restricts access to the host loopback (127.0.0.1).
-      - MT5_API_BIND=0.0.0.0
+      - MT5_HOST=0.0.0.0
+      - MT5_PORT=8001

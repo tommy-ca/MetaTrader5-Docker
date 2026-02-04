@@ -9,7 +9,8 @@ services:
       - "127.0.0.1:8001:8001"
     environment:
       - PASSWORD=demo-password
-      - MT5_API_BIND=0.0.0.0
+      - MT5_HOST=0.0.0.0
+      - MT5_PORT=8001
     volumes:
       - mt5_data:/config
 

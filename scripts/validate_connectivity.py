@@ -54,11 +54,6 @@ def validate(
             "diagnostics": {"stage": "DEPENDENCY_CHECK"},
         }
 
-    # RPyC v6 Fix + Timeout configuration
-    # allow_public_attrs is required for RPyC v6+ to access MT5 object properties
-    config = {"allow_public_attrs": True, "sync_request_timeout": 30}
-    mt5 = MetaTrader5(host=host, port=port, config=config)
-
     res: ValidationResult = {
         "status": "error",
         "task_complete": False,
@@ -66,7 +61,13 @@ def validate(
         "message": "Unknown error",
     }
 
+    mt5 = None
     try:
+        # RPyC v6 Fix + Timeout configuration
+        # allow_public_attrs is required for RPyC v6+ to access MT5 object properties
+        config = {"allow_public_attrs": True, "sync_request_timeout": 30}
+        mt5 = MetaTrader5(host=host, port=port, config=config)
+
         # 1. Initialization loop using monotonic clock for robustness
         start_time = time.monotonic()
         while time.monotonic() - start_time < timeout:
@@ -76,7 +77,7 @@ def validate(
         else:
             res["message"] = f"Failed to initialize MT5: {mt5.last_error()}"
             res["remediation"] = (
-                "Ensure the MT5 container is running and port 8001 is mapped to 127.0.0.1"
+                f"Ensure the MT5 container is running and port {port} is mapped to {host}"
             )
             res["diagnostics"].update({"error_code": mt5.last_error(), "timeout": True})
             return res
@@ -98,9 +99,17 @@ def validate(
         # 3. Data Gathering & Action Parity
         res["diagnostics"]["stage"] = "DATA_CHECK"
 
-        # Sanitize terminal info (remove login/account number)
+        # Sanitize terminal info (remove sensitive fields)
         info_dict = info._asdict() if hasattr(info, "_asdict") else {}
-        info_dict.pop("login", None)
+        sensitive_keys = [
+            "login",
+            "community_account",
+            "path",
+            "data_path",
+            "commondata_path",
+        ]
+        for key in sensitive_keys:
+            info_dict.pop(key, None)
 
         data = {
             "version": mt5.version(),
