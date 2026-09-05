@@ -9,6 +9,14 @@ This project provides a Docker image for running MetaTrader5 with remote access 
 - Built on the reliable and secure [KasmVNC](https://github.com/kasmtech/KasmVNC) project.
 - RPyC server for remote access to Python MetaTrader Library from Windows or Linux using <https://github.com/lucas-campagna/mt5linux>
 
+## Architecture
+
+This project provides a containerized environment for MetaTrader 5 (MT5) with remote access and programmatic control.
+
+- **GUI Layer**: MetaTrader 5 runs inside a [Wine](https://www.winehq.org/) environment. Remote desktop access is provided via [KasmVNC](https://github.com/kasmtech/KasmVNC), allowing interaction through a web browser on port 3000.
+- **API Layer**: A Python-based bridge using [RPyC](https://rpyc.readthedocs.io/) and the [mt5linux](https://github.com/lucas-campagna/mt5linux) library on port 8001. This allows remote Python scripts to interact with MT5 as if it were local.
+- **Healthcheck**: A robust validation script (`scripts/validate_connectivity.py`) ensures the RPyC bridge is responsive and the MT5 terminal is fully initialized.
+
 ![MetaTrader5 running inside container and controlled through web browser](https://imgur.com/v6Hm9pa.png)
 
 ----------
@@ -151,11 +159,24 @@ You can access MetaEditor program clicking in `IDE` button in MetaTrader5 interf
 
 **Metatrader will always be updated automatically to latest version as it does when it is nativelly installed in Windows.**
 
+## Validation
+
+The image includes a robust validation tool that supports health checks and detailed diagnostics.
+
+```bash
+# Quick validation via Docker Exec
+docker exec mt5 python3 /scripts/validate_connectivity.py --json
+```
+
+## Examples & Demos
+
+For a step-by-step validation of your setup from your host machine, check the [Example Suite](examples/README.md).
+
+- **Unified Connectivity Tool**: A robust script in `scripts/` (with a wrapper in `examples/`) to verify the bridge, terminal, and broker connection with optional market data checks.
+
 ## Python programming
 
-You need to install [mt5linux library](https://github.com/lucas-campagna/mt5linux) in your Python host. It may be in any OS, not only Linux.
-
-This is a simple snippet to run your Python script fron any host
+You need to install [mt5linux library](https://github.com/lucas-campagna/mt5linux) in your Python host.
 
 ```python
 from mt5linux import MetaTrader5
@@ -164,66 +185,34 @@ mt5.initialize()
 print(mt5.version())
 ```
 
-Output should be something like this:
-
-```python
-(mt5linux) linux:~/$ python3
-Python 3.10.13 (main, Dec 26 2023, 20:21:41) [GCC 13.2.0] on linux
-Type "help", "copyright", "credits" or "license" for more information.
->>> from mt5linux import MetaTrader5
->>> mt5 = MetaTrader5(host='192.168.1.10',port=8001)
->>> mt5.initialize()
-True
->>> print(mt5.version())
-(500, 4120, '22 Dec 2023')
->>>
-```
+See the **Security** and **Configuration** sections for details.
 
 ## Configuration
 
-The port configuration can be adjusted as per the instructions in the KasmVNC repository.
+The image can be configured using environment variables:
 
-### MetaTrader 5 Command Line Options
+| Variable | Default | Description |
+| :--- | :--- | :--- |
+| `MT5_HOST` | `0.0.0.0` | IP address for the RPyC bridge to bind to. |
+| `MT5_PORT` | `8001` | Port for the RPyC bridge. |
+| `MT5_CMD_OPTIONS` | (empty) | Additional command line arguments for MetaTrader 5 (e.g., `/login:12345`). |
+| `CUSTOM_USER` | `kasm_user` | User for KasmVNC web interface. |
+| `PASSWORD` | `password` | Password for KasmVNC web interface. |
 
-You can pass command line options to MetaTrader 5 using the `MT5_CMD_OPTIONS` environment variable. This is useful for custom configurations, tester modes, or other MetaTrader command line parameters.
+## Security
 
-Example using docker-compose:
+The RPyC protocol is unauthenticated and unencrypted by default. Anyone with network access to port `8001` can execute arbitrary Python code within the container.
 
-```yaml
-version: '3'
-services:
-  mt5:
-    image: gmag11/metatrader5_vnc
-    container_name: mt5
-    volumes:
-      - mt5_config:/config
-    ports:
-      - 3000:3000
-      - 8001:8001
-    environment:
-      - CUSTOM_USER=<Choose a user>
-      - PASSWORD=<Choose a secure password>
-      - MT5_CMD_OPTIONS=/config:C:\\customized_for_tester_etc.ini
+**Best Practices:**
+1. **Restrict Binding**: For production, bind `MT5_HOST` to `127.0.0.1` and use SSH tunneling or a private Docker network.
+2. **Firewalling**: Ensure port `8001` is not exposed to the public internet.
+3. **Access Control**: Use a private network between your trading bot and the MT5 container.
 
-volumes:
-  mt5_config:
-```
+## Troubleshooting
 
-Example using docker run:
-
-```bash
-docker run -d -p 3000:3000 -p 8001:8001 \
-  -e MT5_CMD_OPTIONS="/config:C:\\customized_for_tester_etc.ini" \
-  -v mt5_config:/config \
-  gmag11/metatrader5_vnc
-```
-
-Common MetaTrader 5 command line options:
-
-- `/config:<path>` - Use a specific configuration file
-- `/login:<account>` - Automatically login to specified account
-
-For a complete list of available options, refer to the [MetaTrader 5 documentation](https://www.metatrader5.com/en/terminal/help/start_advanced/start).
+- **MT5 Not Connecting**: If `terminal_connected: false`, ensure the GUI is running (check port 3000) and check `docker logs <container_name>`.
+- **Algo Trading**: Ensure "Algo Trading" is enabled in the MT5 terminal settings if your scripts require it.
+- **Wait for Init**: On first run, MT5 can take up to 5 minutes to initialize Wine and the terminal.
 
 ## Contributions
 

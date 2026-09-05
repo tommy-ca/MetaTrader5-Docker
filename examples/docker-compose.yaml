@@ -1,0 +1,18 @@
+services:
+  mt5:
+    image: gmag11/metatrader5_vnc
+    container_name: mt5-demo
+    shm_size: 2gb
+    init: true
+    ports:
+      - "127.0.0.1:3000:3000"
+      - "127.0.0.1:8001:8001"
+    environment:
+      - PASSWORD=demo-password
+      - MT5_HOST=0.0.0.0
+      - MT5_PORT=8001
+    volumes:
+      - mt5_data:/config
+
+volumes:
+  mt5_data:
