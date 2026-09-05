@@ -41,7 +41,11 @@ class ValidationResult(TypedDict, total=False):
 
 
 def validate(
-    host: str, port: int, symbol: str = "", timeout: int = DEFAULT_CONNECT_TIMEOUT
+    host: str,
+    port: int,
+    symbol: str = "",
+    timeout: int = DEFAULT_CONNECT_TIMEOUT,
+    secret: str | None = None,
 ) -> ValidationResult:
     """Checks MT5 connectivity and returns detailed state."""
 
@@ -66,14 +70,25 @@ def validate(
         # RPyC v6 Fix + Timeout configuration
         # allow_public_attrs is required for RPyC v6+ to access MT5 object properties
         config = {"allow_public_attrs": True, "sync_request_timeout": 30}
-        mt5 = MetaTrader5(host=host, port=port, config=config)
 
-        # 1. Initialization loop using monotonic clock for robustness
+        authenticator = None
+        if secret:
+            from rpyc.utils.authenticators import SharedSecretAuthenticator
+
+            authenticator = SharedSecretAuthenticator(secret.encode("utf-8"))
+
+        mt5 = MetaTrader5(
+            host=host, port=port, config=config, authenticator=authenticator
+        )
+
+        # 1. Initialization loop using monotonic clock with exponential backoff
         start_time = time.monotonic()
+        delay = 0.5
         while time.monotonic() - start_time < timeout:
             if mt5.initialize():
                 break
-            time.sleep(DEFAULT_RETRY_INTERVAL)
+            time.sleep(delay)
+            delay = min(delay * 2, 5)  # Backoff to max 5s
         else:
             res["message"] = f"Failed to initialize MT5: {mt5.last_error()}"
             res["remediation"] = (
@@ -99,23 +114,24 @@ def validate(
         # 3. Data Gathering & Action Parity
         res["diagnostics"]["stage"] = "DATA_CHECK"
 
-        # Sanitize terminal info (remove sensitive fields)
+        # Sanitize terminal info (Allow-list approach for maximum security)
         info_dict = info._asdict() if hasattr(info, "_asdict") else {}
-        sensitive_keys = [
-            "login",
-            "community_account",
-            "path",
-            "data_path",
-            "commondata_path",
+        safe_fields = [
+            "connected",
+            "trade_allowed",
+            "company",
+            "build",
+            "name",
+            "language",
+            "commondata_path",  # Internal path, but useful for config detection
         ]
-        for key in sensitive_keys:
-            info_dict.pop(key, None)
+        sanitized_info = {k: v for k, v in info_dict.items() if k in safe_fields}
 
         data = {
             "version": mt5.version(),
             "broker": getattr(info, "company", "Unknown"),
             "trade_allowed": getattr(info, "trade_allowed", False),
-            "terminal_info": info_dict,
+            "terminal_info": sanitized_info,
         }
 
         if symbol:
@@ -164,6 +180,9 @@ def main() -> None:
         "--port", type=int, default=int(os.getenv("MT5_PORT", 8001)), help="RPyC port"
     )
     parser.add_argument(
+        "--secret", default=os.getenv("RPYC_SECRET"), help="RPyC shared secret"
+    )
+    parser.add_argument(
         "--symbol", help="Check market data for specific symbol (e.g. EURUSD)"
     )
     parser.add_argument(
@@ -177,7 +196,7 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    result = validate(args.host, args.port, args.symbol, args.timeout)
+    result = validate(args.host, args.port, args.symbol, args.timeout, args.secret)
 
     if args.json:
         # Machine-readable output for agents and CI/CD
